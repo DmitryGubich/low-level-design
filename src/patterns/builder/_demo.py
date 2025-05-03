@@ -9,7 +9,6 @@ if __name__ == "__main__":
         .add_dessert() \
         .add_drink() \
         .build()
-    # fmt: on
 
     print("Vegan Meal constructed: ")
     print(f"Starter: {vegan_meal.starter.name}")
@@ -20,7 +19,6 @@ if __name__ == "__main__":
     ##########################################################################
 
     healthy_builder = HealthyMealBuilder()
-    # fmt: off
     healthy_meal = healthy_builder \
         .add_starter() \
         .add_main_course() \
