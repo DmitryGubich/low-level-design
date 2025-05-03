@@ -1,4 +1,4 @@
-from lru_cache import LRUCache
+from cache import LRUCache
 
 if __name__ == "__main__":
     cache = LRUCache(capacity=3)
