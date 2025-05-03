@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from burgertype import (
+from patterns.factory_method.burger import (
     BurgerType,
     Burger,
     VeganBurger,

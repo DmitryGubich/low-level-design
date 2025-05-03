@@ -1,4 +1,4 @@
-from cache import LRUCache
+from designs.lru_cache.cache import LRUCache
 
 if __name__ == "__main__":
     cache = LRUCache(capacity=3)

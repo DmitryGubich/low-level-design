@@ -1,5 +1,5 @@
-from burgertype import BurgerType
-from stores import CheeseBurgerStore, VeganBurgerStore
+from patterns.factory_method.burger import BurgerType
+from patterns.factory_method.stores import CheeseBurgerStore, VeganBurgerStore
 
 if __name__ == "__main__":
     cheese_store = CheeseBurgerStore()
