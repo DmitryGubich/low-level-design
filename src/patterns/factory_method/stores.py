@@ -12,7 +12,7 @@ from patterns.factory_method.burger import (
 
 class BurgerStore(ABC):
     @abstractmethod
-    def create_burger(self, item: BurgerType) -> Burger | None:
+    def create_burger(self, item: BurgerType) -> Burger:
         pass
 
     def order_burger(self, type: BurgerType) -> Burger:
@@ -25,20 +25,14 @@ class BurgerStore(ABC):
 
 
 class CheeseBurgerStore(BurgerStore):
-    def create_burger(self, item: BurgerType) -> Burger | None:
-        if item == BurgerType.CHEESE:
-            return CheeseBurger()
-        elif item == BurgerType.DELUXECHEESE:
+    def create_burger(self, item: BurgerType) -> Burger:
+        if item == BurgerType.DELUXECHEESE:
             return DeluxeCheeseBurger()
-        else:
-            return None
+        return CheeseBurger()
 
 
 class VeganBurgerStore(BurgerStore):
-    def create_burger(self, item: BurgerType) -> Burger | None:
-        if item == BurgerType.VEGAN:
-            return VeganBurger()
-        elif item == BurgerType.DELUXEVEGAN:
+    def create_burger(self, item: BurgerType) -> Burger:
+        if item == BurgerType.DELUXEVEGAN:
             return DeluxeVeganBurger()
-        else:
-            return None
+        return VeganBurger()
