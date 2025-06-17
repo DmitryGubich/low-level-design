@@ -1,8 +1,11 @@
 import threading
 
-from designs.exp_cache.cache import AutoExpiringCache
+import pytest
+
+from src.designs.exp_cache.cache import AutoExpiringCache
 
 
+@pytest.mark.repeat(24)
 def test_thread_safety():
     cache = AutoExpiringCache(default_ttl=1)
     errors = []
