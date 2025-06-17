@@ -9,6 +9,8 @@ dependencies = [
     "pre-commit>=4.2.0",
     "pyre-check>=0.9.23",
     "pytest>=8.3.5",
+    "pytest-rerunfailures>=15.1",
+    "pytest-xdist>=3.7.0",
     "ruff>=0.11.5",
 ]
 
