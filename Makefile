@@ -10,4 +10,4 @@ type-checking:
 
 .PHONY: run-tests
 run-tests:
-	$(shell) pytest
+	$(shell) pytest -n auto
