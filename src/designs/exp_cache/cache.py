@@ -1,54 +1,58 @@
 import threading
 import time
-from datetime import datetime
-
-
-def now():
-    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
 class AutoExpiringCache:
-    def __init__(self, default_ttl):
+    def __init__(self, default_ttl=60, use_lock=True):
         self.cache = {}
         self.ttl = default_ttl
+        self.use_lock = use_lock
         self.lock = threading.Lock()
 
+    def _sync(self, func):
+        if self.use_lock:
+            with self.lock:
+                return func()
+        else:
+            return func()
+
     def set(self, key, value, ttl=None):
-        expire_at = time.time() + (ttl if ttl is not None else self.ttl)
-        with self.lock:
+        def op():
+            expire_at = time.time() + (ttl if ttl is not None else self.ttl)
             self.cache[key] = (value, expire_at)
-            print(
-                f"[{now()}] [CACHE] Set {key} = {value}, expires in {expire_at - time.time():.1f}s"
-            )
+
+        self._sync(op)
 
     def get(self, key):
-        with self.lock:
+        def op():
             if key in self.cache:
                 value, expire_at = self.cache[key]
+                time.sleep(0.001)
                 if time.time() < expire_at:
-                    print(f"[{now()}] [CACHE] Get {key} = {value}")
                     return value
                 else:
-                    print(f"[{now()}] [CACHE] Get {key} expired — deleting")
                     del self.cache[key]
-            else:
-                print(f"[{now()}] [CACHE] Get {key} — not found")
-        return None
+            return None
+
+        return self._sync(op)
 
     def delete(self, key):
-        with self.lock:
+        def op():
             if key in self.cache:
+                time.sleep(0.001)
                 del self.cache[key]
-                print(f"[{now()}] [CACHE] Deleted {key}")
+
+        self._sync(op)
 
     def cleanup(self):
-        now = time.time()
-        with self.lock:
-            ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-            keys_to_delete = [k for k, v in self.cache.items() if v[1] < now]
-            for key in keys_to_delete:
-                print(f"[{ts}] [CLEANUP] Deleted expired key: {key}")
-                del self.cache[key]
+        def op():
+            now_ts = time.time()
+            keys_to_delete = [k for k, (_, exp) in self.cache.items() if exp < now_ts]
+            time.sleep(0.001)
+            for k in keys_to_delete:
+                del self.cache[k]
+
+        self._sync(op)
 
     def autoclean(self, interval=30):
         def loop():

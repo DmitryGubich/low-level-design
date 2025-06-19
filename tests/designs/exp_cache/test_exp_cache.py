@@ -1,27 +1,44 @@
+import random
 import threading
 
-from src.designs.exp_cache.cache import AutoExpiringCache
+from designs.exp_cache.cache import AutoExpiringCache
 
 
-def test_thread_safety():
-    cache = AutoExpiringCache(default_ttl=1)
-    errors = []
+def test_cache_thread_safety():
+    cache = AutoExpiringCache(default_ttl=5, use_lock=True)
 
-    def worker():
-        try:
-            for i in range(1000):
-                key = f"key_{i % 10}"
-                cache.set(key, i)
-                val = cache.get(key)
-                if val is not None and not isinstance(val, int):
-                    errors.append(f"Invalid value: {val}")
-        except Exception as e:
-            errors.append(str(e))
+    def writer():
+        for i in range(500):
+            key = f"key_{i % 100}"
+            cache.set(key, i)
 
-    threads = [threading.Thread(target=worker) for _ in range(10)]
+    def reader():
+        for _ in range(500):
+            key = f"key_{random.randint(0, 99)}"
+            _ = cache.get(key)
+
+    def deleter():
+        for _ in range(500):
+            key = f"key_{random.randint(0, 99)}"
+            cache.delete(key)
+
+    def iterator():
+        for _ in range(200):
+            for _ in cache.cache:
+                pass
+
+    threads = []
+    for _ in range(4):
+        threads.extend(
+            [
+                threading.Thread(target=writer),
+                threading.Thread(target=reader),
+                threading.Thread(target=deleter),
+                threading.Thread(target=iterator),
+            ]
+        )
+
     for t in threads:
         t.start()
     for t in threads:
         t.join()
-
-    assert not errors, f"Errors occurred: {errors}"
