@@ -1,46 +1,64 @@
-import time
-from threading import Lock
+import base64
+import random
+import re
+import string
+import threading
+from abc import ABC, abstractmethod
 
-from designs.url_shortener.base62 import encode
 
-BASE_URL = "https://short.my/"
+class ShorteningStrategy(ABC):
+    @abstractmethod
+    def generate_short_url(self, long_url):
+        pass
 
 
-class TinyUrlService:
-    def __init__(self, limit=100, use_lock=True) -> None:
+class CounterStrategy(ShorteningStrategy):
+    def __init__(self):
         self.counter = 1
-        self.limit = limit
-        self.url_map = {}
-        self.reverse_map = {}
-        self.use_lock = use_lock
-        self.lock = Lock()
+        self.lock = threading.Lock()
 
-    def _sync(self, func):
-        if self.use_lock:
-            with self.lock:
-                return func()
-        else:
-            return func()
-
-    def shorten_url(self, long_url: str) -> str:
-        def op():
-            if long_url in self.reverse_map:
-                return f"{BASE_URL}{self.reverse_map[long_url]}"
-
-            if self.counter > self.limit:
-                raise ValueError("Out of capacity")
-            time.sleep(0.001)
-
-            short_url = encode(self.counter)
+    def generate_short_url(self, long_url):
+        with self.lock:
+            old_value = self.counter
             self.counter += 1
+            return str(old_value)
 
-            self.url_map[short_url] = long_url
-            self.reverse_map[long_url] = short_url
 
-            return f"{BASE_URL}{short_url}"
+class Base64Strategy(ShorteningStrategy):
+    def generate_short_url(self, long_url):
+        return base64.urlsafe_b64encode(long_url.encode()).decode()[:8]
 
-        return self._sync(op)
 
-    def get_long_url(self, short_url: str) -> str:
-        short_url = short_url.replace(BASE_URL, "")
-        return self.url_map.get(short_url)
+class RandomStrategy(ShorteningStrategy):
+    def generate_short_url(self, long_url):
+        return "".join(random.choices(string.ascii_letters + string.digits, k=8))
+
+
+# URL Shortener class
+class URLShortener:
+    URL_PATTERN = re.compile(r"^(https?://)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*/?$")
+
+    def __init__(self, strategy: ShorteningStrategy):
+        self.lock = threading.Lock()
+        self.url_map = {}
+        self.short_to_url = {}
+        self.strategy = strategy
+
+    def shorten(self, long_url):
+        if not self._is_valid_url(long_url):
+            raise ValueError("Invalid URL format")
+
+        with self.lock:
+            if long_url in self.url_map:
+                return self.url_map[long_url]
+            short_url = self.strategy.generate_short_url(long_url)
+            self.url_map[long_url] = short_url
+            self.short_to_url[short_url] = long_url
+            return short_url
+
+    def unshorten(self, short_url):
+        with self.lock:
+            return self.short_to_url.get(short_url, None)
+
+    def _is_valid_url(self, url):
+        return bool(self.URL_PATTERN.match(url))
