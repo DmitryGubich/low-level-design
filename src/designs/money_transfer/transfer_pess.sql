@@ -1,3 +1,9 @@
+CREATE TABLE accounts (
+    account_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    balance NUMERIC(18,2) NOT NULL CHECK (balance >= 0),
+    version INTEGER NOT NULL DEFAULT 0
+);
+
 BEGIN;
 
 -- Захватываем блокировки строк для обеих учётных записей
